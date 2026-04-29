@@ -220,12 +220,12 @@ export default function HomePage() {
       </main>
 
       {/* FAB（スマホ用） */}
-      <button
+      {/* <button
         onClick={() => { setEditing(null); setModalOpen(true) }}
         className="sm:hidden fixed bottom-6 right-5 w-14 h-14 bg-orange-600 text-white text-2xl rounded-full shadow-lg hover:bg-orange-700 active:scale-95 transition-all z-40 flex items-center justify-center"
       >
         ＋
-      </button>
+      </button> */}
 
       {/* モーダル */}
       <RestaurantModal
