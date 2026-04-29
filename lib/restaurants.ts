@@ -30,7 +30,7 @@ export async function createRestaurant(restaurant: RestaurantInsert) {
     // .select()
     // .single()
     console.log(error)
-  if (error) throw error
+  if (error || !data) throw error
   return data
 }
 
