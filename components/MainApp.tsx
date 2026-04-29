@@ -117,12 +117,12 @@ export default function HomePage() {
         <div className="max-w-2xl mx-auto flex items-center justify-between gap-3">
           <h1 className="font-serif italic text-2xl text-orange-700 shrink-0">孤独じゃないグルメ</h1>
           <div className="flex items-center gap-2">
-            <button
+            {/* <button
               onClick={() => { setEditing(null); setModalOpen(true) }}
               className="hidden sm:block px-4 py-2 text-sm rounded-full bg-orange-600 text-white hover:bg-orange-700 transition-colors shrink-0"
             >
               ＋ 追加
-            </button>
+            </button> */}
             {/* ユーザーメニュー */}
             <div className="relative">
               <button

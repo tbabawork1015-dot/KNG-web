@@ -171,20 +171,20 @@ export default function RestaurantCard({ restaurant: r, onEdit, onDelete }: Prop
         )}
 
         {/* アクション */}
-        {/* <div className="flex justify-end gap-2 mt-3 pt-3 border-t border-stone-100">
+        <div className="flex justify-end gap-2 mt-3 pt-3 border-t border-stone-100">
           <button
             onClick={() => onEdit(r)}
             className="text-xs px-3 py-1.5 rounded-full border border-stone-200 text-stone-500 hover:bg-stone-50 transition-colors"
           >
             ✏️ 編集
           </button>
-          <button
+          {/* <button
             onClick={() => onDelete(r)}
             className="text-xs px-3 py-1.5 rounded-full border border-stone-200 text-stone-500 hover:bg-orange-50 hover:text-orange-600 hover:border-orange-200 transition-colors"
           >
             削除
-          </button>
-        </div> */}
+          </button> */}
+        </div>
       </div>
     </article>
   )
