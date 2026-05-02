@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import Image from 'next/image'
 import type { Restaurant, RestaurantInsert } from '@/types'
 import { uploadImage, deleteImage } from '@/lib/restaurants'
+import { compressImage, formatFileSize } from '@/lib/imageUtils'
 
 interface Props {
   open: boolean
@@ -33,6 +34,8 @@ export default function RestaurantModal({ open, restaurant, onClose, onSave }: P
   const [imgFile, setImgFile] = useState<File | null>(null)
   const [imgPreview, setImgPreview] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
+  const [compressing, setCompressing] = useState(false)
+  const [imgInfo, setImgInfo] = useState<{ before: string; after: string } | null>(null)
   const [error, setError] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
 
@@ -60,6 +63,7 @@ export default function RestaurantModal({ open, restaurant, onClose, onSave }: P
         setImgPreview(null)
       }
       setImgFile(null)
+      setImgInfo(null)
       setError('')
     }
   }, [open, restaurant])
@@ -68,11 +72,33 @@ export default function RestaurantModal({ open, restaurant, onClose, onSave }: P
     setForm((f) => ({ ...f, [key]: value || null }))
   }
 
-  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
-    setImgFile(file)
-    setImgPreview(URL.createObjectURL(file))
+
+    setCompressing(true)
+    setImgInfo(null)
+    setError('')
+
+    try {
+      const beforeSize = formatFileSize(file.size)
+
+      // アップロード前に圧縮（最大1280px・WebP変換）
+      const compressed = await compressImage(file, {
+        maxWidth: 1280,
+        maxHeight: 1280,
+        quality: 0.82,
+      })
+
+      const afterSize = formatFileSize(compressed.size)
+      setImgInfo({ before: beforeSize, after: afterSize })
+      setImgFile(compressed)
+      setImgPreview(URL.createObjectURL(compressed))
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '画像の処理に失敗しました')
+    } finally {
+      setCompressing(false)
+    }
   }
 
   async function handleSubmit() {
@@ -119,15 +145,37 @@ export default function RestaurantModal({ open, restaurant, onClose, onSave }: P
         {/* 写真 */}
         <div className="mb-4">
           <label className="text-xs font-medium text-stone-500 mb-1.5 block">写真</label>
-          {imgPreview ? (
-            <div className="relative w-full h-44 rounded-xl overflow-hidden mb-2">
-              <Image src={imgPreview} alt="プレビュー" fill className="object-cover" />
-              <button
-                onClick={() => { setImgPreview(null); setImgFile(null); set('image_url', null) }}
-                className="absolute top-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded-lg hover:bg-black/70"
-              >
-                削除
-              </button>
+          {compressing ? (
+            <div className="w-full h-24 border-2 border-dashed border-orange-300 rounded-xl flex items-center justify-center gap-2 text-orange-500 text-sm bg-orange-50">
+              <span className="animate-spin text-lg">⏳</span>
+              <span>圧縮中...</span>
+            </div>
+          ) : imgPreview ? (
+            <div>
+              <div className="relative w-full h-44 rounded-xl overflow-hidden mb-2">
+                <Image src={imgPreview} alt="プレビュー" fill className="object-cover" />
+                <button
+                  onClick={() => {
+                    setImgPreview(null)
+                    setImgFile(null)
+                    setImgInfo(null)
+                    set('image_url', null)
+                  }}
+                  className="absolute top-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded-lg hover:bg-black/70"
+                >
+                  削除
+                </button>
+              </div>
+              {/* 圧縮前後のサイズ表示 */}
+              {imgInfo && (
+                <div className="flex items-center gap-1.5 text-[11px] text-stone-400 px-1">
+                  <span>📦 圧縮:</span>
+                  <span className="line-through text-stone-300">{imgInfo.before}</span>
+                  <span>→</span>
+                  <span className="text-green-600 font-medium">{imgInfo.after}</span>
+                  <span className="text-green-500">✓ WebP変換済み</span>
+                </div>
+              )}
             </div>
           ) : (
             <button
@@ -218,10 +266,10 @@ export default function RestaurantModal({ open, restaurant, onClose, onSave }: P
           </button>
           <button
             onClick={handleSubmit}
-            disabled={saving}
+            disabled={saving || compressing}
             className="px-5 py-2 text-sm rounded-full bg-orange-600 text-white hover:bg-orange-700 disabled:opacity-50 transition-colors"
           >
-            {saving ? '保存中...' : '保存する'}
+            {saving ? '保存中...' : compressing ? '圧縮中...' : '保存する'}
           </button>
         </div>
       </div>
