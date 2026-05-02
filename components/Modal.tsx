@@ -35,7 +35,7 @@ export default function RestaurantModal({ open, restaurant, onClose, onSave }: P
   const [imgPreview, setImgPreview] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [compressing, setCompressing] = useState(false)
-  const [imgInfo, setImgInfo] = useState<{ before: string; after: string } | null>(null)
+  const [imgInfo, setImgInfo] = useState<{ before: string; after: string; didCompress: boolean } | null>(null)
   const [error, setError] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
 
@@ -90,10 +90,14 @@ export default function RestaurantModal({ open, restaurant, onClose, onSave }: P
         quality: 0.82,
       })
 
-      const afterSize = formatFileSize(compressed.size)
-      setImgInfo({ before: beforeSize, after: afterSize })
-      setImgFile(compressed)
-      setImgPreview(URL.createObjectURL(compressed))
+      // 圧縮後の方が大きくなった場合は元のファイルを使う
+      const result = compressed.size < file.size ? compressed : file
+      const afterSize = formatFileSize(result.size)
+      const didCompress = compressed.size < file.size
+
+      setImgInfo({ before: beforeSize, after: afterSize, didCompress })
+      setImgFile(result)
+      setImgPreview(URL.createObjectURL(result))
     } catch (err) {
       setError(err instanceof Error ? err.message : '画像の処理に失敗しました')
     } finally {
@@ -169,11 +173,21 @@ export default function RestaurantModal({ open, restaurant, onClose, onSave }: P
               {/* 圧縮前後のサイズ表示 */}
               {imgInfo && (
                 <div className="flex items-center gap-1.5 text-[11px] text-stone-400 px-1">
-                  <span>📦 圧縮:</span>
-                  <span className="line-through text-stone-300">{imgInfo.before}</span>
-                  <span>→</span>
-                  <span className="text-green-600 font-medium">{imgInfo.after}</span>
-                  <span className="text-green-500">✓ WebP変換済み</span>
+                  {imgInfo.didCompress ? (
+                    <>
+                      <span>📦 圧縮:</span>
+                      <span className="line-through text-stone-300">{imgInfo.before}</span>
+                      <span>→</span>
+                      <span className="text-green-600 font-medium">{imgInfo.after}</span>
+                      <span className="text-green-500">✓ WebP変換済み</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>📎 元の画像を使用:</span>
+                      <span className="text-stone-500 font-medium">{imgInfo.after}</span>
+                      <span className="text-stone-400">（変換後の方が大きいため）</span>
+                    </>
+                  )}
                 </div>
               )}
             </div>
