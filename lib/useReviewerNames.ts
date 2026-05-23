@@ -2,53 +2,68 @@ import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
 export interface ReviewerNames {
+  id: string
+  label_a: string
+  label_b: string
+  label_c: string
+  label_d: string
+}
+
+// 表示用に a/b/c/d のキーに変換したビュー型
+export interface ReviewerLabels {
   a: string
   b: string
   c: string
   d: string
 }
 
-const DEFAULT_NAMES: ReviewerNames = { a: 'Aさん', b: 'Bさん', c: 'Cさん', d: 'Dさん' }
+const DEFAULT_LABELS: ReviewerLabels = {
+  a: 'Aさん', b: 'Bさん', c: 'Cさん', d: 'Dさん',
+}
 
 export function useReviewerNames() {
-  const [names, setNames] = useState<ReviewerNames>(DEFAULT_NAMES)
+  const [record, setRecord] = useState<ReviewerNames | null>(null)
   const [loading, setLoading] = useState(true)
 
-  // Supabase から読み込み
-  useEffect(() => {
+  // DB からレビュアー名を取得
+  const load = useCallback(async () => {
     const supabase = createClient()
-    supabase
+    const { data, error } = await supabase
       .from('reviewer_names')
-      .select('name_a, name_b, name_c, name_d')
-      .eq('id', 1)
+      .select('*')
+      .order('created_at', { ascending: true })
+      .limit(1)
       .single()
-      .then(({ data, error }) => {
-        if (!error && data) {
-          setNames({ a: data.name_a, b: data.name_b, c: data.name_c, d: data.name_d })
-        }
-        setLoading(false)
-      })
+
+    if (!error && data) setRecord(data)
+    setLoading(false)
   }, [])
 
-  // Supabase に保存
-  const updateNames = useCallback(async (next: ReviewerNames) => {
-    setNames(next) // 楽観的更新（即時反映）
+  useEffect(() => { load() }, [load])
+
+  // DB を更新
+  const updateNames = useCallback(async (labels: ReviewerLabels) => {
+    if (!record) return
     const supabase = createClient()
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('reviewer_names')
-      .upsert({
-        id: 1,
-        name_a: next.a,
-        name_b: next.b,
-        name_c: next.c,
-        name_d: next.d,
-        updated_at: new Date().toISOString(),
+      .update({
+        label_a: labels.a,
+        label_b: labels.b,
+        label_c: labels.c,
+        label_d: labels.d,
       })
-    if (error) {
-      console.error('レビュアー名の保存に失敗しました:', error)
-      throw error
-    }
-  }, [])
+      .eq('id', record.id)
+      .select()
+      .single()
+
+    if (!error && data) setRecord(data)
+  }, [record])
+
+  // コンポーネントが使いやすい a/b/c/d 形式に変換
+  const names: ReviewerLabels = record
+    ? { a: record.label_a, b: record.label_b, c: record.label_c, d: record.label_d }
+    : DEFAULT_LABELS
 
   return { names, loading, updateNames }
 }

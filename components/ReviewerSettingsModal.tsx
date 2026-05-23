@@ -1,20 +1,20 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import type { ReviewerNames } from '@/lib/useReviewerNames'
+import type { ReviewerLabels } from '@/lib/useReviewerNames'
 
 interface Props {
   open: boolean
-  current: ReviewerNames
+  current: ReviewerLabels
   onClose: () => void
-  onSave: (names: ReviewerNames) => Promise<void>
+  onSave: (names: ReviewerLabels) => Promise<void>
 }
 
 const KEYS = ['a', 'b', 'c', 'd'] as const
 const DEFAULTS = { a: 'Aさん', b: 'Bさん', c: 'Cさん', d: 'Dさん' }
 
 export default function ReviewerSettingsModal({ open, current, onClose, onSave }: Props) {
-  const [draft, setDraft] = useState<ReviewerNames>(current)
+  const [draft, setDraft] = useState<ReviewerLabels>(current)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
@@ -25,9 +25,12 @@ export default function ReviewerSettingsModal({ open, current, onClose, onSave }
   if (!open) return null
 
   async function handleSave() {
-    const saved = Object.fromEntries(
-      KEYS.map((k) => [k, draft[k].trim() || DEFAULTS[k]])
-    ) as ReviewerNames
+    const saved: ReviewerLabels = {
+      a: draft.a.trim() || DEFAULTS.a,
+      b: draft.b.trim() || DEFAULTS.b,
+      c: draft.c.trim() || DEFAULTS.c,
+      d: draft.d.trim() || DEFAULTS.d,
+    }
     setSaving(true)
     setError('')
     try {

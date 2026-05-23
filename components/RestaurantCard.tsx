@@ -3,11 +3,11 @@
 
 import Image from 'next/image'
 import type { Restaurant } from '@/types'
-import type { ReviewerNames } from '@/lib/useReviewerNames'
+import type { ReviewerLabels } from '@/lib/useReviewerNames'
 
 interface Props {
   restaurant: Restaurant
-  names: ReviewerNames
+  names: ReviewerLabels
   onEdit: (r: Restaurant) => void
   onDelete: (r: Restaurant) => void
 }

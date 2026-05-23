@@ -3,14 +3,14 @@
 import { useState, useEffect, useRef } from 'react'
 import Image from 'next/image'
 import type { Restaurant, RestaurantInsert } from '@/types'
-import type { ReviewerLabels as ReviewerNames } from '@/lib/useReviewerNames'
+import type { ReviewerLabels } from '@/lib/useReviewerNames'
 import { uploadImage, deleteImage } from '@/lib/restaurants'
 import { compressImage, formatFileSize } from '@/lib/imageUtils'
 
 interface Props {
   open: boolean
   restaurant?: Restaurant | null
-  names: ReviewerNames
+  names: ReviewerLabels
   onClose: () => void
   onSave: (data: RestaurantInsert) => Promise<void>
 }
@@ -130,6 +130,16 @@ export default function RestaurantModal({ open, restaurant, names, onClose, onSa
   }
 
   if (!open) return null
+
+  const inputCls = 'w-full text-sm px-3 py-2 rounded-xl border border-stone-200 bg-stone-50 text-stone-900 outline-none focus:border-orange-400 focus:bg-white transition-colors'
+
+  // レビュアーの評価フィールド定義
+  const ratingFields = [
+    { key: 'rating_a' as const, label: names.a },
+    { key: 'rating_b' as const, label: names.b },
+    { key: 'rating_c' as const, label: names.c },
+    { key: 'rating_d' as const, label: names.d },
+  ]
 
   return (
     <div
