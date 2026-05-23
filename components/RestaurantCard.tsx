@@ -3,9 +3,11 @@
 
 import Image from 'next/image'
 import type { Restaurant } from '@/types'
+import type { ReviewerNames } from '@/lib/useReviewerNames'
 
 interface Props {
   restaurant: Restaurant
+  names: ReviewerNames
   onEdit: (r: Restaurant) => void
   onDelete: (r: Restaurant) => void
 }
@@ -68,7 +70,7 @@ function MealBadge({ meal }: { meal: string | null }) {
   )
 }
 
-export default function RestaurantCard({ restaurant: r, onEdit, onDelete }: Props) {
+export default function RestaurantCard({ restaurant: r, names, onEdit, onDelete }: Props) {
   const avg = avgRating(r)
 
   return (
@@ -120,12 +122,12 @@ export default function RestaurantCard({ restaurant: r, onEdit, onDelete }: Prop
 
         <div className="h-px bg-stone-100 my-3" />
 
-        {/* 評価 */}
+        {/* 評価ボックス - レビュアー名を表示 */}
         <div className="grid grid-cols-4 gap-1.5 mb-2">
-          <RatingBox label="A" value={r.rating_a} />
-          <RatingBox label="B" value={r.rating_b} />
-          <RatingBox label="C" value={r.rating_c} />
-          <RatingBox label="D" value={r.rating_d} />
+          <RatingBox label={names.a} value={r.rating_a} />
+          <RatingBox label={names.b} value={r.rating_b} />
+          <RatingBox label={names.c} value={r.rating_c} />
+          <RatingBox label={names.d} value={r.rating_d} />
         </div>
 
         {avg !== null && (

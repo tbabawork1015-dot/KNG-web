@@ -4,10 +4,12 @@ import { useState, useEffect, useMemo, useCallback } from 'react'
 import type { Restaurant, RestaurantInsert, FilterState } from '@/types'
 import { getRestaurants, createRestaurant, updateRestaurant, deleteRestaurant } from '@/lib/restaurants'
 import { createClient } from '@/lib/supabase/client'
+import { useReviewerNames } from '@/lib/useReviewerNames'
 import RestaurantCard from '@/components/RestaurantCard'
 import RestaurantModal from '@/components/Modal'
 import DeleteModal from '@/components/DeleteModal'
 import StatsRow from '@/components/StatsRow'
+import ReviewerSettingsModal from '@/components/ReviewerSettingsModal'
 
 function avgRating(r: Restaurant): number | null {
   const v = [r.rating_a, r.rating_b, r.rating_c, r.rating_d].filter((x): x is number => x !== null)
@@ -21,6 +23,7 @@ export default function HomePage() {
   const [toast, setToast] = useState('')
   const [userEmail, setUserEmail] = useState<string | null>(null)
   const [showUserMenu, setShowUserMenu] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
 
   const [filter, setFilter] = useState<FilterState>({
     search: '',
@@ -29,6 +32,7 @@ export default function HomePage() {
     sort: 'date_desc',
   })
 
+  const { names, updateNames } = useReviewerNames()
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState<Restaurant | null>(null)
   const [deleting, setDeleting] = useState<Restaurant | null>(null)
@@ -132,6 +136,9 @@ export default function HomePage() {
               >
                 {userEmail ? userEmail[0].toUpperCase() : '?'}
               </button>
+              <button onClick={() => { setShowUserMenu(false); setSettingsOpen(true) }}>
+                👥 レビュアー名を設定
+              </button>
               {showUserMenu && (
                 <>
                   {/* オーバーレイ */}
@@ -212,6 +219,7 @@ export default function HomePage() {
             <RestaurantCard
               key={r.id}
               restaurant={r}
+              names={names}
               onEdit={(r) => { setEditing(r); setModalOpen(true) }}
               onDelete={(r) => setDeleting(r)}
             />
@@ -231,6 +239,7 @@ export default function HomePage() {
       <RestaurantModal
         open={modalOpen}
         restaurant={editing}
+        names={names}
         onClose={() => { setModalOpen(false); setEditing(null) }}
         onSave={handleSave}
       />
@@ -241,6 +250,12 @@ export default function HomePage() {
           onCancel={() => setDeleting(null)}
         />
       )}
+      <ReviewerSettingsModal
+        open={settingsOpen}
+        current={names}
+        onClose={() => setSettingsOpen(false)}
+        onSave={async (next) => { await updateNames(next); showToast('👥 レビュアー名を更新しました') }}
+      />
 
       {/* トースト */}
       <div

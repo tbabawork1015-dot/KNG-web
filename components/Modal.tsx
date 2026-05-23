@@ -3,12 +3,14 @@
 import { useState, useEffect, useRef } from 'react'
 import Image from 'next/image'
 import type { Restaurant, RestaurantInsert } from '@/types'
+import type { ReviewerLabels as ReviewerNames } from '@/lib/useReviewerNames'
 import { uploadImage, deleteImage } from '@/lib/restaurants'
 import { compressImage, formatFileSize } from '@/lib/imageUtils'
 
 interface Props {
   open: boolean
   restaurant?: Restaurant | null
+  names: ReviewerNames
   onClose: () => void
   onSave: (data: RestaurantInsert) => Promise<void>
 }
@@ -29,7 +31,7 @@ const EMPTY: RestaurantInsert = {
   image_url: null,
 }
 
-export default function RestaurantModal({ open, restaurant, onClose, onSave }: Props) {
+export default function RestaurantModal({ open, restaurant, names, onClose, onSave }: Props) {
   const [form, setForm] = useState<RestaurantInsert>(EMPTY)
   const [imgFile, setImgFile] = useState<File | null>(null)
   const [imgPreview, setImgPreview] = useState<string | null>(null)
@@ -243,21 +245,20 @@ export default function RestaurantModal({ open, restaurant, onClose, onSave }: P
           <input type="text" value={form.budget ?? ''} onChange={(e) => set('budget', e.target.value)} placeholder="例: ~3,000円" className={inputCls} />
         </Field>
 
+        {/* 評価 - 設定した名前を表示 */}
         <div className="grid grid-cols-2 gap-3">
-          {(['a', 'b', 'c', 'd'] as const).map((p) => {
-            const key = `rating_${p}` as keyof RestaurantInsert
-            return (
-              <Field key={p} label={`${p.toUpperCase()}さん評価 (1〜5)`}>
-                <input
-                  type="number" min="1" max="5" step="0.5"
-                  value={(form[key] as number | null) ?? ''}
-                  onChange={(e) => set(key, e.target.value ? Number(e.target.value) : null)}
-                  placeholder="-"
-                  className={inputCls}
-                />
-              </Field>
-            )
-          })}
+          {ratingFields.map(({ key, label }) => (
+            <div key={key} className="mb-3">
+              <label className="text-xs font-medium text-stone-500 mb-1 block">{label}の評価 (1〜5)</label>
+              <input
+                type="number" min="1" max="5" step="0.5"
+                value={(form[key] as number | null) ?? ''}
+                onChange={(e) => set(key, e.target.value ? Number(e.target.value) : null)}
+                placeholder="-"
+                className={inputCls}
+              />
+            </div>
+          ))}
         </div>
 
         <Field label="お店URL">
