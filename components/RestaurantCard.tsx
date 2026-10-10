@@ -9,7 +9,8 @@ interface Props {
   restaurant: Restaurant
   names: ReviewerLabels
   onEdit: (r: Restaurant) => void
-  onDelete: (r: Restaurant) => void
+  // 渡されたときだけ削除ボタンを表示する
+  onDelete?: (r: Restaurant) => void
 }
 
 function avgRating(r: Restaurant): number | null {
@@ -180,12 +181,14 @@ export default function RestaurantCard({ restaurant: r, names, onEdit, onDelete 
           >
             ✏️ 編集
           </button>
-          {/* <button
-            onClick={() => onDelete(r)}
-            className="text-xs px-3 py-1.5 rounded-full border border-stone-200 text-stone-500 hover:bg-orange-50 hover:text-orange-600 hover:border-orange-200 transition-colors"
-          >
-            削除
-          </button> */}
+          {onDelete && (
+            <button
+              onClick={() => onDelete(r)}
+              className="text-xs px-3 py-1.5 rounded-full border border-stone-200 text-stone-500 hover:bg-orange-50 hover:text-orange-600 hover:border-orange-200 transition-colors"
+            >
+              🗑 削除
+            </button>
+          )}
         </div>
       </div>
     </article>
