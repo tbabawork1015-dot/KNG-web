@@ -5,6 +5,7 @@ import type { Restaurant, RestaurantInsert, FilterState } from '@/types'
 import { getRestaurants, createRestaurant, updateRestaurant, deleteRestaurant } from '@/lib/restaurants'
 import { createClient } from '@/lib/supabase/client'
 import { useReviewerNames } from '@/lib/useReviewerNames'
+import { toDisplayName } from '@/lib/username'
 import RestaurantCard from '@/components/RestaurantCard'
 import RestaurantModal from '@/components/Modal'
 import DeleteModal from '@/components/DeleteModal'
@@ -21,7 +22,7 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [toast, setToast] = useState('')
-  const [userEmail, setUserEmail] = useState<string | null>(null)
+  const [userName, setUserName] = useState<string | null>(null)
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
 
@@ -56,9 +57,10 @@ export default function HomePage() {
 
   useEffect(() => {
     load()
-    // ここを追加：ログインユーザーのメールを取得
+    // ログインユーザーの表示名を取得（ユーザー名形式のアカウントはドメイン部分を除く）
     createClient().auth.getUser().then(({ data }) => {
-      setUserEmail(data.user?.email ?? null)
+      const email = data.user?.email
+      setUserName(email ? toDisplayName(email) : null)
     })
   }, [load])
 
@@ -132,9 +134,9 @@ export default function HomePage() {
               <button
                 onClick={() => setShowUserMenu((v) => !v)}
                 className="w-9 h-9 rounded-full bg-stone-100 border border-stone-200 flex items-center justify-center text-stone-600 hover:bg-stone-200 transition-colors text-sm font-medium"
-                title={userEmail ?? ''}
+                title={userName ?? ''}
               >
-                {userEmail ? userEmail[0].toUpperCase() : '?'}
+                {userName ? userName[0].toUpperCase() : '?'}
               </button>
               <button onClick={() => { setShowUserMenu(false); setSettingsOpen(true) }}>
                 👥 レビュアー名を設定
@@ -145,7 +147,7 @@ export default function HomePage() {
                   <div className="fixed inset-0 z-40" onClick={() => setShowUserMenu(false)} />
                   <div className="absolute right-0 top-11 z-50 bg-white border border-stone-200 rounded-xl shadow-lg py-1 w-56">
                     <div className="px-3 py-2 text-xs text-stone-400 border-b border-stone-100 truncate">
-                      {userEmail}
+                      {userName}
                     </div>
                     <button
                       onClick={handleLogout}
