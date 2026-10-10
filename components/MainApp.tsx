@@ -176,9 +176,10 @@ export default function HomePage() {
                     <div className="px-3 py-2 text-xs text-stone-400 border-b border-stone-100 truncate">
                       {userName}
                     </div>
+                    {/* CSV エクスポート（PC のみ表示） */}
                     <button
                       onClick={handleExport}
-                      className="w-full text-left px-3 py-2 text-sm text-stone-700 hover:bg-stone-50 transition-colors"
+                      className="hidden sm:block w-full text-left px-3 py-2 text-sm text-stone-700 hover:bg-stone-50 transition-colors"
                     >
                       📥 CSV エクスポート
                     </button>
