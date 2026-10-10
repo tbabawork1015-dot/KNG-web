@@ -165,9 +165,11 @@ export default function HomePage() {
               >
                 {userName ? userName[0].toUpperCase() : '?'}
               </button>
-              <button onClick={() => { setShowUserMenu(false); setSettingsOpen(true) }}>
-                👥 レビュアー名を設定
-              </button>
+              {canEdit && (
+                <button onClick={() => { setShowUserMenu(false); setSettingsOpen(true) }}>
+                  👥 レビュアー名を設定
+                </button>
+              )}
               {showUserMenu && (
                 <>
                   {/* オーバーレイ */}
@@ -256,7 +258,7 @@ export default function HomePage() {
               key={r.id}
               restaurant={r}
               names={names}
-              onEdit={(r) => { setEditing(r); setModalOpen(true) }}
+              onEdit={canEdit ? (r) => { setEditing(r); setModalOpen(true) } : undefined}
               onDelete={canEdit ? (r) => setDeleting(r) : undefined}
             />
           ))}

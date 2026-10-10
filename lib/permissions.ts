@@ -1,9 +1,16 @@
 import type { User } from '@supabase/supabase-js'
 
-// レストランの追加・削除ができるかどうか
-// 現在はログインしているユーザー全員に許可する。
-// 制限ユーザーを作るときは、管理者だけが変更できる app_metadata（例: role: 'viewer'）で判定する想定。
-// ※ 画面の表示を切り替えるだけなので、実際の制限は Supabase の RLS でも行う必要がある
+// 閲覧用ユーザーのロール名（auth.users の app_metadata.role に設定する）
+// app_metadata は管理者だけが変更でき、ユーザー自身は書き換えられない
+export const VIEWER_ROLE = 'viewer'
+
+export function isViewer(user: User | null): boolean {
+  return user?.app_metadata?.role === VIEWER_ROLE
+}
+
+// データ（レストラン・レビュアー名）の追加・更新・削除ができるかどうか
+// ログインしていて、閲覧用ユーザーでなければ許可する。
+// ※ 画面の表示を切り替えるだけなので、実際の制限は Supabase の RLS で行う
 export function canEditRestaurants(user: User | null): boolean {
-  return user !== null
+  return user !== null && !isViewer(user)
 }
