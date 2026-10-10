@@ -37,11 +37,23 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  // ログイン済み かつ /login → / へリダイレクト
-  if (user && pathname === '/login') {
-    const url = request.nextUrl.clone()
-    url.pathname = '/'
-    return NextResponse.redirect(url)
+  if (user) {
+    // 初回ログイン（仮パスワード）のユーザーはパスワード設定が必要
+    const mustChangePassword = user.app_metadata?.must_change_password === true
+
+    // パスワード設定が必要 かつ /set-password 以外 → /set-password へリダイレクト
+    if (mustChangePassword && pathname !== '/set-password') {
+      const url = request.nextUrl.clone()
+      url.pathname = '/set-password'
+      return NextResponse.redirect(url)
+    }
+
+    // ログイン済み かつ /login、または設定不要 かつ /set-password → / へリダイレクト
+    if (pathname === '/login' || (!mustChangePassword && pathname === '/set-password')) {
+      const url = request.nextUrl.clone()
+      url.pathname = '/'
+      return NextResponse.redirect(url)
+    }
   }
 
   return supabaseResponse
