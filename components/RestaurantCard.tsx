@@ -8,8 +8,8 @@ import type { ReviewerLabels } from '@/lib/useReviewerNames'
 interface Props {
   restaurant: Restaurant
   names: ReviewerLabels
-  onEdit: (r: Restaurant) => void
-  // 渡されたときだけ削除ボタンを表示する
+  // それぞれ渡されたときだけ編集・削除ボタンを表示する
+  onEdit?: (r: Restaurant) => void
   onDelete?: (r: Restaurant) => void
 }
 
@@ -173,23 +173,27 @@ export default function RestaurantCard({ restaurant: r, names, onEdit, onDelete 
           </>
         )}
 
-        {/* アクション */}
-        <div className="flex justify-end gap-2 mt-3 pt-3 border-t border-stone-100">
-          <button
-            onClick={() => onEdit(r)}
-            className="text-xs px-3 py-1.5 rounded-full border border-stone-200 text-stone-500 hover:bg-stone-50 transition-colors"
-          >
-            ✏️ 編集
-          </button>
-          {onDelete && (
-            <button
-              onClick={() => onDelete(r)}
-              className="text-xs px-3 py-1.5 rounded-full border border-stone-200 text-stone-500 hover:bg-orange-50 hover:text-orange-600 hover:border-orange-200 transition-colors"
-            >
-              🗑 削除
-            </button>
-          )}
-        </div>
+        {/* アクション（閲覧用ユーザーには表示しない） */}
+        {(onEdit || onDelete) && (
+          <div className="flex justify-end gap-2 mt-3 pt-3 border-t border-stone-100">
+            {onEdit && (
+              <button
+                onClick={() => onEdit(r)}
+                className="text-xs px-3 py-1.5 rounded-full border border-stone-200 text-stone-500 hover:bg-stone-50 transition-colors"
+              >
+                ✏️ 編集
+              </button>
+            )}
+            {onDelete && (
+              <button
+                onClick={() => onDelete(r)}
+                className="text-xs px-3 py-1.5 rounded-full border border-stone-200 text-stone-500 hover:bg-orange-50 hover:text-orange-600 hover:border-orange-200 transition-colors"
+              >
+                🗑 削除
+              </button>
+            )}
+          </div>
+        )}
       </div>
     </article>
   )
