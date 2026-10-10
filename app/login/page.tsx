@@ -2,9 +2,10 @@
 
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { toLoginEmail } from '@/lib/username'
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('')
+  const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -13,8 +14,8 @@ export default function LoginPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!email || !password) {
-      setError('メールアドレスとパスワードを入力してください')
+    if (!username.trim() || !password) {
+      setError('ユーザー名とパスワードを入力してください')
       return
     }
 
@@ -22,14 +23,17 @@ export default function LoginPage() {
     setError('')
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password })
+      const { error } = await supabase.auth.signInWithPassword({
+        email: toLoginEmail(username),
+        password,
+      })
       if (error) throw error
       window.location.href = '/'
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'エラーが発生しました'
       const ja: Record<string, string> = {
-        'Invalid login credentials': 'メールアドレスまたはパスワードが正しくありません',
-        'Email not confirmed': 'メールアドレスの確認が完了していません',
+        'Invalid login credentials': 'ユーザー名またはパスワードが正しくありません',
+        'Email not confirmed': 'アカウントの確認が完了していません。管理者にお問い合わせください',
       }
       setError(ja[msg] ?? msg)
     } finally {
@@ -56,15 +60,17 @@ export default function LoginPage() {
           <form onSubmit={handleSubmit} className="space-y-3">
             <div>
               <label className="text-xs font-medium text-stone-500 mb-1 block">
-                メールアドレス
+                ユーザー名
               </label>
               <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
                 className={inputCls}
-                autoComplete="email"
+                autoComplete="username"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
                 autoFocus
               />
             </div>
