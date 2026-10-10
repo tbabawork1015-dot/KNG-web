@@ -27,10 +27,9 @@ export async function createRestaurant(restaurant: RestaurantInsert) {
   const { data, error } = await supabase
     .from('restaurants')
     .insert(restaurant)
-    // .select()
-    // .single()
-    console.log(error)
-  if (error || !data) throw error
+    .select()
+    .single()
+  if (error) throw error
   return data
 }
 
@@ -48,11 +47,14 @@ export async function updateRestaurant(id: string, restaurant: RestaurantUpdate)
 
 export async function deleteRestaurant(id: string) {
   const supabase = createClient()
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('restaurants')
     .delete()
     .eq('id', id)
+    .select('id')
   if (error) throw error
+  // RLS で拒否された場合はエラーにならず 0 件になるため、ここで検知する
+  if (!data.length) throw new Error('削除できませんでした')
 }
 
 export async function uploadImage(file: File): Promise<string> {

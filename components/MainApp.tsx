@@ -6,11 +6,14 @@ import { getRestaurants, createRestaurant, updateRestaurant, deleteRestaurant } 
 import { createClient } from '@/lib/supabase/client'
 import { useReviewerNames } from '@/lib/useReviewerNames'
 import { toDisplayName } from '@/lib/username'
+import { canEditRestaurants } from '@/lib/permissions'
+import { buildRestaurantsCsv, downloadCsv } from '@/lib/exportCsv'
 import RestaurantCard from '@/components/RestaurantCard'
 import RestaurantModal from '@/components/Modal'
 import DeleteModal from '@/components/DeleteModal'
 import StatsRow from '@/components/StatsRow'
 import ReviewerSettingsModal from '@/components/ReviewerSettingsModal'
+import ScrollToTopButton from '@/components/ScrollToTopButton'
 
 function avgRating(r: Restaurant): number | null {
   const v = [r.rating_a, r.rating_b, r.rating_c, r.rating_d].filter((x): x is number => x !== null)
@@ -23,6 +26,7 @@ export default function HomePage() {
   const [error, setError] = useState('')
   const [toast, setToast] = useState('')
   const [userName, setUserName] = useState<string | null>(null)
+  const [canEdit, setCanEdit] = useState(false)
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
 
@@ -61,12 +65,27 @@ export default function HomePage() {
     createClient().auth.getUser().then(({ data }) => {
       const email = data.user?.email
       setUserName(email ? toDisplayName(email) : null)
+      setCanEdit(canEditRestaurants(data.user))
     })
   }, [load])
 
   async function handleLogout() {
     await createClient().auth.signOut()  // Supabaseのセッションを破棄
     window.location.href = '/login'      // ログインページへ強制遷移
+  }
+
+  // 全件を最新の状態で取得し、スプレッドシートと同じレイアウトの CSV をダウンロード
+  async function handleExport() {
+    setShowUserMenu(false)
+    try {
+      const all = await getRestaurants()
+      const d = new Date()
+      const ymd = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`
+      downloadCsv(`孤独じゃないグルメ記録帳_${ymd}.csv`, buildRestaurantsCsv(all, names))
+      showToast('📥 CSV をダウンロードしました')
+    } catch {
+      showToast('⚠️ エクスポートに失敗しました')
+    }
   }
 
   const genres = useMemo(
@@ -104,10 +123,15 @@ export default function HomePage() {
 
   async function handleDelete() {
     if (!deleting) return
-    await deleteRestaurant(deleting.id)
-    setRestaurants((prev) => prev.filter((r) => r.id !== deleting.id))
-    setDeleting(null)
-    showToast('🗑 削除しました')
+    try {
+      await deleteRestaurant(deleting.id)
+      setRestaurants((prev) => prev.filter((r) => r.id !== deleting.id))
+      showToast('🗑 削除しました')
+    } catch {
+      showToast('⚠️ 削除に失敗しました')
+    } finally {
+      setDeleting(null)
+    }
   }
 
   function f(key: keyof FilterState, val: string) {
@@ -123,12 +147,15 @@ export default function HomePage() {
         <div className="max-w-2xl mx-auto flex items-center justify-between gap-3">
           <h1 className="font-serif italic text-2xl text-orange-700 shrink-0">孤独じゃないグルメ</h1>
           <div className="flex items-center gap-2">
-            {/* <button
-              onClick={() => { setEditing(null); setModalOpen(true) }}
-              className="hidden sm:block px-4 py-2 text-sm rounded-full bg-orange-600 text-white hover:bg-orange-700 transition-colors shrink-0"
-            >
-              ＋ 追加
-            </button> */}
+            {/* 追加ボタン（PC用） */}
+            {canEdit && (
+              <button
+                onClick={() => { setEditing(null); setModalOpen(true) }}
+                className="hidden sm:block px-4 py-2 text-sm rounded-full bg-orange-600 text-white hover:bg-orange-700 transition-colors shrink-0"
+              >
+                ＋ 追加
+              </button>
+            )}
             {/* ユーザーメニュー */}
             <div className="relative">
               <button
@@ -149,6 +176,12 @@ export default function HomePage() {
                     <div className="px-3 py-2 text-xs text-stone-400 border-b border-stone-100 truncate">
                       {userName}
                     </div>
+                    <button
+                      onClick={handleExport}
+                      className="w-full text-left px-3 py-2 text-sm text-stone-700 hover:bg-stone-50 transition-colors"
+                    >
+                      📥 CSV エクスポート
+                    </button>
                     <button
                       onClick={handleLogout}
                       className="w-full text-left px-3 py-2 text-sm text-stone-700 hover:bg-stone-50 transition-colors"
@@ -223,19 +256,25 @@ export default function HomePage() {
               restaurant={r}
               names={names}
               onEdit={(r) => { setEditing(r); setModalOpen(true) }}
-              onDelete={(r) => setDeleting(r)}
+              onDelete={canEdit ? (r) => setDeleting(r) : undefined}
             />
           ))}
         </div>
       </main>
 
-      {/* FAB（スマホ用） */}
-      {/* <button
-        onClick={() => { setEditing(null); setModalOpen(true) }}
-        className="sm:hidden fixed bottom-6 right-5 w-14 h-14 bg-orange-600 text-white text-2xl rounded-full shadow-lg hover:bg-orange-700 active:scale-95 transition-all z-40 flex items-center justify-center"
-      >
-        ＋
-      </button> */}
+      {/* 追加ボタン（スマホ用・下中央） */}
+      {canEdit && (
+        <button
+          onClick={() => { setEditing(null); setModalOpen(true) }}
+          aria-label="レストランを追加"
+          className="sm:hidden fixed bottom-6 left-1/2 -translate-x-1/2 w-14 h-14 bg-orange-600 text-white text-2xl rounded-full shadow-lg hover:bg-orange-700 active:scale-95 transition-all z-40 flex items-center justify-center"
+        >
+          ＋
+        </button>
+      )}
+
+      {/* 一番上に戻るボタン（スマホ用・右下） */}
+      <ScrollToTopButton />
 
       {/* モーダル */}
       <RestaurantModal
@@ -259,9 +298,9 @@ export default function HomePage() {
         onSave={async (next) => { await updateNames(next); showToast('👥 レビュアー名を更新しました') }}
       />
 
-      {/* トースト */}
+      {/* トースト（スマホでは追加ボタンと重ならないよう上にずらす） */}
       <div
-        className={`fixed bottom-8 left-1/2 -translate-x-1/2 bg-stone-900 text-white text-sm px-5 py-2.5 rounded-full shadow-lg pointer-events-none transition-all duration-300 z-50 whitespace-nowrap
+        className={`fixed bottom-24 sm:bottom-8 left-1/2 -translate-x-1/2 bg-stone-900 text-white text-sm px-5 py-2.5 rounded-full shadow-lg pointer-events-none transition-all duration-300 z-50 whitespace-nowrap
           ${toast ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}
       >
         {toast}
